@@ -2,14 +2,18 @@ import express from 'express';
 import cors from 'cors';
 import pino from 'pino-http';
 import 'dotenv/config';
+import { connectMongoDB } from './db/connectMongoDB.js';
+import { Note } from './models/note.js';
 
 const app = express();
-
 const PORT = process.env.PORT ?? 3000;
 
 // Middleware для парсингу JSON
 app.use(express.json());
-app.use(cors()); // Дозволяє запити з будь-яких джерел
+
+// Дозволяє запити з будь-яких джерел
+app.use(cors());
+
 //Логування
 app.use(
   pino({
@@ -28,15 +32,20 @@ app.use(
   }),
 );
 
-app.get('/notes', (req, res) => {
-  res.status(200).json({ message: 'Retrieved all notes' });
+// Маршрут // GET /notes — список усіх нотатків
+app.get('/notes', async (req, res) => {
+  const notes = await Note.find();
+  res.status(200).json(notes);
 });
 
-app.get('/notes/:noteId', (req, res) => {
+// Маршрут // GET /notes/:noteId — одна нотатка за id
+app.get('/notes/:noteId', async (req, res) => {
   const { noteId } = req.params;
-  res.status(200).json({
-    message: `Retrieved note with ID: ${noteId}`,
-  });
+  const note = await Note.findById(noteId);
+  if (!note) {
+    return res.status(404).json({ message: 'Note not found' });
+  }
+  res.status(200).json(note);
 });
 
 // Маршрут для тестування middleware помилки
@@ -60,6 +69,8 @@ app.use((err, req, res, next) => {
       : err.message,
   });
 });
+
+await connectMongoDB();
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
