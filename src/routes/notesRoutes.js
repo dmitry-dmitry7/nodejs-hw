@@ -12,6 +12,7 @@ import {
   noteIdSchema,
   getAllNotesSchema,
   createNoteSchema,
+  updateNoteSchema,
 } from '../validations/notesValidation.js';
 
 const notesRoutes = Router();
@@ -29,6 +30,6 @@ notesRoutes.post('/notes', celebrate(createNoteSchema), createNote);
 notesRoutes.delete('/notes/:noteId', celebrate(noteIdSchema), deleteNote);
 
 //Маршрут PATCH /notes/:noteId — оновити існуючу нотатку за її ідентифікатором
-notesRoutes.patch('/notes/:noteId', updateNote);
+notesRoutes.patch('/notes/:noteId', celebrate(updateNoteSchema), updateNote);
 
 export default notesRoutes;
