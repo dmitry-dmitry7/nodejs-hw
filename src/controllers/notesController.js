@@ -4,8 +4,55 @@ import { Note } from '../models/note.js';
 
 // Отримати список усіх нотаток
 export const getAllNotes = async (req, res) => {
-  const notes = await Note.find();
-  res.status(200).json(notes);
+  // Отримуємо параметри пагінації
+  // і задаємо дефолтні значення
+  const { page = 1, perPage = 10, tag, search } = req.query;
+
+  const skip = (page - 1) * perPage;
+
+  // Створюємо опис базового запиту до колекції
+  const notesQuery = Note.find();
+
+  // Фільтр за тегом
+  if (tag) {
+    notesQuery.where('tag').equals(tag);
+  }
+  // Пошук по частині текста
+  if (search) {
+    notesQuery.where({
+      $or: [
+        {
+          title: {
+            $regex: search,
+            $options: 'i',
+          },
+        },
+        {
+          content: {
+            $regex: search,
+            $options: 'i',
+          },
+        },
+      ],
+    });
+  }
+
+  // Виконуємо одразу два запити паралельно
+  const [totalNotes, notes] = await Promise.all([
+    notesQuery.clone().countDocuments(),
+    notesQuery.skip(skip).limit(perPage),
+  ]);
+
+  // Обчислюємо загальну кількість «сторінок»
+  const totalPages = Math.ceil(totalNotes / perPage);
+
+  res.status(200).json({
+    page,
+    perPage,
+    totalNotes,
+    totalPages,
+    notes,
+  });
 };
 
 // Отримати одну нотатку за id
