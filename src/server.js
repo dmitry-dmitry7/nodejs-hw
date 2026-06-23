@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import 'dotenv/config';
 
 import { errors } from 'celebrate';
@@ -8,6 +9,7 @@ import { logger } from './middleware/logger.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
+import authRoutes from './routes/authRoutes.js';
 import notesRoutes from './routes/notesRoutes.js';
 
 const app = express();
@@ -22,7 +24,12 @@ app.use(express.json());
 // Middleware дозволяє запити з будь-яких джерел
 app.use(cors());
 
-// підключаємо групу маршрутів нотатки
+// Підключаємо cookie
+app.use(cookieParser());
+
+// Підключаємо групу маршрутів authenticate
+app.use(authRoutes);
+// Підключаємо групу маршрутів нотатки
 app.use(notesRoutes);
 
 // Middleware 404  — якщо маршрут не знайдено (після всіх маршрутів)
